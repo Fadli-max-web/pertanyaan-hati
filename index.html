@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pertanyaan Hati 💌</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#ff5fa2;
+    --bg1: linear-gradient(135deg,#ffe6f2,#e6f6ff);
+    --card:#fff;
+    --glass: rgba(255,255,255,0.6);
+  }
+  *{box-sizing:border-box;font-family:"Poppins",sans-serif}
+  html,body{height:100%;margin:0;background:var(--bg1);display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{
+    width:100%;max-width:760px;background:linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.95));
+    border-radius:18px;padding:26px;box-shadow:0 10px 30px rgba(0,0,0,0.12);backdrop-filter: blur(6px);
+  }
+  .header{display:flex;align-items:center;gap:16px}
+  .logo{width:68px;height:68px;border-radius:12px;background:linear-gradient(135deg,#ffb6da,#a8d8ff);display:flex;align-items:center;justify-content:center;font-size:28px;color:white;box-shadow:0 6px 18px rgba(255,95,162,0.18)}
+  h1{font-size:1.4rem;margin:0;color:var(--pink)}
+  p.lead{margin:6px 0 0;color:#444;font-size:0.95rem}
+  .progress{height:8px;background:rgba(0,0,0,0.06);border-radius:10px;margin:18px 0;overflow:hidden}
+  .progress > div{height:100%;background:linear-gradient(90deg,var(--pink),#ff88b8);width:0%;transition:width .35s ease}
+  .steps{min-height:260px;display:flex;flex-direction:column;gap:12px;align-items:stretch}
+  .question{display:none;flex-direction:column;gap:10px;animation:fadeIn .35s ease both}
+  .question.active{display:flex}
+  label{font-weight:600;color:#333;font-size:0.95rem}
+  textarea, input[type="text"]{
+    width:100%;min-height:100px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.07);resize:vertical;font-size:0.95rem
+  }
+  .controls{display:flex;justify-content:space-between;gap:12px;margin-top:10px}
+  button{
+    padding:10px 16px;border-radius:999px;border:none;cursor:pointer;font-weight:600;
+  }
+  .btn-next{background:var(--pink);color:white;box-shadow:0 8px 20px rgba(255,95,162,0.12)}
+  .btn-back{background:transparent;color:var(--pink);border:1px solid rgba(255,95,162,0.12)}
+  .meta{display:flex;gap:10px;align-items:center;font-size:0.9rem;color:#666;margin-top:8px}
+  .sent{display:none;padding:18px;text-align:center;border-radius:12px;background:linear-gradient(180deg,#fff7fb,#fff);box-shadow:0 8px 30px rgba(255,95,162,0.06)}
+  .sent.show{display:block}
+  .small{font-size:0.85rem;color:#777}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (max-width:520px){ .header{gap:12px} .logo{width:56px;height:56px;font-size:24px} }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="logo">💘</div>
+    <div>
+      <h1>Pertanyaan Hati</h1>
+      <p class="lead">Jawab jujur ya — semua jawaban tersimpan aman.</p>
+    </div>
+  </div>
+
+  <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+
+  <div style="margin-bottom:12px">
+    <input id="nama" type="text" placeholder="Nama kamu (opsional tapi disarankan)" style="padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);width:100%;font-size:0.95rem">
+    <div class="small" style="margin-top:8px">Nama akan membantu aku tahu siapa yang menjawab 💬</div>
+  </div>
+
+  <div class="steps" id="steps">
+    <!-- Questions inserted by JS -->
+  </div>
+
+  <div class="controls" id="controls">
+    <button id="backBtn" class="btn-back" style="visibility:hidden">Kembali</button>
+    <button id="nextBtn" class="btn-next">Lanjut</button>
+  </div>
+
+  <div class="meta">
+    <div class="small">Total pertanyaan: <strong id="total">10</strong></div>
+    <div class="small" style="margin-left:auto">Status: <span id="statusText">Belum selesai</span></div>
+  </div>
+
+  <div class="sent" id="sentBox" style="margin-top:14px">
+    <h3>Terima kasih ❤️</h3>
+    <p class="small">Jawabanmu sudah tersimpan. Kalau mau, kamu bisa kirim lagi atau bagikan link ini.</p>
+    <div style="margin-top:12px">
+      <button id="again" style="padding:8px 14px;border-radius:999px;border:1px solid var(--pink);background:white;color:var(--pink)">Kirim Lagi</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =========== CONFIG ============ */
+const API_URL = "https://script.google.com/macros/s/AKfycbyIG_VF2AqWfW_W1lphWalD2hGFK5ALINpTk-J9M0PRi450Ww_4PHL1CNf1RIj8gRc/exec";
+/* ================================= */
+
+/* Pertanyaan sesuai yang kamu kirim (10) */
+const questions = [
+  "Kalau aku bilang aku nyaman ngobrol sama kamu, kamu bakal percaya nggak?",
+  "Kamu pernah nggak sih tiba-tiba senyum sendiri gara-gara chat atau omongan seseorang? Siapa tuh?",
+  "Menurut kamu, hal apa yang bikin kamu tertarik sama seseorang? dari apanya?",
+  "Misalnya kalau kita lagi jalan bareng, kamu lebih suka jalan jalan santai atau duduk di tempat yang nyaman sambil lihat pemandangan?",
+  "Kamu tipe yang suka menunjukkin rasa sayang lewat kata-kata atau tindakan?",
+  "Ada nggak hal kecil dari aku yang diam-diam kamu perhatiin?",
+  "Kalau aku tiba-tiba hilang seharian, kamu bakal nyariin nggak?",
+  "Kalau suatu hari aku bilang suka sama kamu dan pacaran… kamu bakal jawab apa?",
+  "Kamu lebih suka hubungan yang penuh kejutan atau yang pelan-pelan tapi pasti?",
+  "Kira-kira aku ini udah masuk kategori “spesial” atau tipe kamu banget di hidup kamu belum?"
+];
+
+const stepsContainer = document.getElementById('steps');
+const totalEl = document.getElementById('total');
+const bar = document.getElementById('bar');
+const statusText = document.getElementById('statusText');
+const sentBox = document.getElementById('sentBox');
+const againBtn = document.getElementById('again');
+
+totalEl.textContent = questions.length;
+
+/* buat elemen pertanyaan */
+questions.forEach((q,i)=>{
+  const wrap = document.createElement('div');
+  wrap.className = 'question' + (i===0 ? ' active':'');
+  wrap.dataset.index = i;
+  wrap.innerHTML = `
+    <label>Pertanyaan ${i+1}. ${q}</label>
+    <textarea id="q${i}" placeholder="Tulis jawabanmu di sini..." rows="5"></textarea>
+  `;
+  stepsContainer.appendChild(wrap);
+});
+
+/* kontrol step */
+let idx = 0;
+const total = questions.length;
+const nextBtn = document.getElementById('nextBtn');
+const backBtn = document.getElementById('backBtn');
+
+function updateUI(){
+  document.querySelectorAll('.question').forEach(el=>el.classList.remove('active'));
+  const cur = document.querySelector(`.question[data-index="${idx}"]`);
+  if(cur) cur.classList.add('active');
+
+  // progress
+  const percent = Math.round(((idx)/total)*100);
+  bar.style.width = percent + '%';
+
+  backBtn.style.visibility = idx === 0 ? 'hidden' : 'visible';
+  nextBtn.textContent = idx === total-1 ? 'Kirim' : 'Lanjut';
+  statusText.textContent = `${idx+1}/${total} pertanyaan`;
+}
+
+nextBtn.addEventListener('click', async ()=>{
+  // simple validation: require at least 1 char on each step
+  const ta = document.getElementById(`q${idx}`);
+  if(ta && ta.value.trim().length < 1){
+    ta.focus();
+    ta.style.border = '1px solid rgba(255,95,162,0.9)';
+    setTimeout(()=>ta.style.border='1px solid rgba(0,0,0,0.07)',900);
+    return;
+  }
+
+  if(idx < total-1){
+    idx++;
+    updateUI();
+    return;
+  }
+
+  // last step: submit
+  submitAll();
+});
+
+backBtn.addEventListener('click', ()=>{ if(idx>0){ idx--; updateUI(); } });
+
+function collectAnswers(){
+  const nama = document.getElementById('nama').value.trim() || 'Anonim';
+  let payload = '';
+  questions.forEach((q,i)=>{
+    const val = document.getElementById(`q${i}`).value.trim();
+    payload += (i+1)+'. '+ q + '\nJawab: ' + (val || '-') + '\n\n';
+  });
+  return { nama, jawaban: payload };
+}
+
+function submitAll(){
+  const data = collectAnswers();
+  // show pending UI
+  nextBtn.disabled = true; nextBtn.textContent = 'Mengirim...';
+  statusText.textContent = 'Mengirim jawaban...';
+
+  // NOTE: many Apps Script web apps don't return CORS-friendly response.
+  // Using mode: 'no-cors' is more reliable for simple post to Apps Script.
+  fetch(API_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  }).catch(err=>{
+    // ignore - no-cors will often block reading response
+    console.log('fetch err', err);
+  });
+
+  // optimistic success message (cek Google Sheets untuk verifikasi)
+  setTimeout(()=>{
+    nextBtn.disabled = false;
+    nextBtn.textContent = 'Lanjut';
+    sentBox.classList.add('show');
+    statusText.textContent = 'Terkirim';
+    bar.style.width = '100%';
+    window.scrollTo({top:0,behavior:'smooth'});
+  },700);
+}
+
+againBtn.addEventListener('click', ()=>{
+  // reset UI
+  document.getElementById('nama').value = '';
+  document.querySelectorAll('textarea').forEach(t=> t.value='');
+  sentBox.classList.remove('show');
+  idx = 0; updateUI();
+});
+
+/* inisialisasi */
+updateUI();
+</script>
+
+</body>
+</html>
